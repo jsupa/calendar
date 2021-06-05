@@ -1,4 +1,4 @@
-# calendar <img src="https://visitor-badge.glitch.me/badge?page_id=jsupa.calendar"> <img src="https://wakatime.com/badge/github/jsupa/calendar">
+# calendar <img src="https://visitor-badge.glitch.me/badge?page_id=jsupa.calendar"> <img src="https://wakatime.com/badge/github/jsupa/calendar.svg">
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y246Y0V)
 
