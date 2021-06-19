@@ -134,9 +134,31 @@
         }
     }
 
-    .alert {
+    .warn {
         background-color: rgba(255, 0, 0, 0.1);
-        display: none;
+
+        i {
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 25px;
+            color: #000;
+            float: left;
+        }
+
+        p {
+            margin-left: 10px;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #021859;
+            float: left;
+        }
+    }
+
+    .alert {
+        background-color: #0280221a;
 
         i {
             position: relative;
@@ -181,6 +203,20 @@
         &:active {
             outline: none;
             border: none;
+        }
+    }
+
+    .resetPass {
+        cursor: pointer;
+        margin-top: 20px;
+        width: auto;
+        height: 20px;
+        padding: 0;
+        color: #021859;
+        background: none;
+
+        &:hover {
+            text-decoration: underline;
         }
     }
 }

@@ -124,9 +124,28 @@
 .login_form .input input::placeholder {
   color: #0213463d;
 }
-.login_form .alert {
+.login_form .warn {
   background-color: rgba(255, 0, 0, 0.1);
-  display: none;
+}
+.login_form .warn i {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 25px;
+  color: #000;
+  float: left;
+}
+.login_form .warn p {
+  margin-left: 10px;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #021859;
+  float: left;
+}
+.login_form .alert {
+  background-color: #0280221a;
 }
 .login_form .alert i {
   position: relative;
@@ -167,6 +186,18 @@
 .login_form button:active {
   outline: none;
   border: none;
+}
+.login_form .resetPass {
+  cursor: pointer;
+  margin-top: 20px;
+  width: auto;
+  height: 20px;
+  padding: 0;
+  color: #021859;
+  background: none;
+}
+.login_form .resetPass:hover {
+  text-decoration: underline;
 }
 
 .right_side {
