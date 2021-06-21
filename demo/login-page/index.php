@@ -11,7 +11,11 @@
 
 // demo - admin - admin
 
+include('config.php');
+
 date_default_timezone_set('Europe/Bratislava');
+setlocale(LC_ALL, 'sk_SK');
+
 session_start();
 
 function RandomString($length = 20)
@@ -24,6 +28,7 @@ function RandomString($length = 20)
     return $key;
 }
 
+$db = mysqli_connect($DB_HOST, $DB_LOGIN, $DB_PASSWORD, $DB_DATABASE);
 // $db = mysqli_connect('localhost', 'root', 'root', 'planning_calendar');
 
 if (isset($_POST['sign_up'])) {
@@ -32,32 +37,38 @@ if (isset($_POST['sign_up'])) {
     $password = mysqli_real_escape_string($db, $_POST['password']);
 
     if (empty($company_name)) {
-        $_SESSION['warn'] = 'Company doman required';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['DOMAIN_REQUIRE'];
     } else if (empty($email)) {
-        $_SESSION['warn'] = 'Email required';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['USER_REQUIRE'];
     } else if (empty($password)) {
-        $_SESSION['warn'] = 'Password required';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['PASS_REQUIRE'];
     } else {
         $searchCompanyName = 'SELECT * FROM ' . $company_name;
         $searchCompanyName = mysqli_query($db, $searchCompanyName);
         if (empty($searchCompanyName)) {
-            $_SESSION['warn'] = 'Cloud doesnt exist';
+            $_SESSION['warn'] = $DEFAULT_LANGUAGE['DOMAIN_NOT_EXIST'];
         } else {
             $searchCompanyName = mysqli_num_rows($searchCompanyName);
             $validateEmailSQL = "SELECT * FROM $company_name WHERE email = '$email'";
             $result = mysqli_query($db, $validateEmailSQL);
             if (mysqli_num_rows($result) == 0) {
-                $_SESSION['warn'] = 'User doesnt exist';
+                $_SESSION['warn'] = $DEFAULT_LANGUAGE['USER_NOT_EXIST'];
             } else {
                 $password = md5($password);
                 $validateEmailSQL = "SELECT * FROM $company_name WHERE email = '$email' AND password_md5 = '$password'";
                 $result = mysqli_query($db, $validateEmailSQL);
                 if (mysqli_num_rows($result) == 0) {
-                    $_SESSION['warn'] = 'Wrong pass';
+                    $_SESSION['warn'] = $DEFAULT_LANGUAGE['WRONG_PASS'];
                     $_SESSION['wrongPassShow'] = 1;
                 } else {
                     $result = mysqli_fetch_assoc($result);
-                    $_SESSION['alert'] = 'Logged in as ' . $result['first_name'] . ' ' . $result['last_name'];
+                    $_SESSION['alert'] = "Logged in as {$result['first_name']} {$result['last_name']}";
+                    $_SESSION['user'] = $result['email'];
+                    $_SESSION['first_name'] = $result['first_name'];
+                    $_SESSION['last_name'] = $result['last_name'];
+                    $_SESSION['cloud'] = $company_name;
+                    header('location: https://creepy-corp.eu/git/jsupa/calendar/demo/login-page/php');
+                    die();
                 }
             }
         }
@@ -69,53 +80,55 @@ if (isset($_POST['password_reset'])) {
     $email = mysqli_real_escape_string($db, $_POST['email']);
 
     if (empty($company_name)) {
-        $_SESSION['warn'] = 'Company doman required';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['DOMAIN_REQUIRE'];
     } else if (empty($email)) {
-        $_SESSION['warn'] = 'Email required';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['USER_REQUIRE'];
     } else {
         $searchCompanyName = 'SELECT * FROM ' . $company_name;
         $searchCompanyName = mysqli_query($db, $searchCompanyName);
         if (empty($searchCompanyName)) {
-            $_SESSION['warn'] = 'Cloud doesnt exist';
+            $_SESSION['warn'] = $DEFAULT_LANGUAGE['DOMAIN_NOT_EXIST'];
         } else {
             $searchCompanyName = mysqli_num_rows($searchCompanyName);
             $validateEmailSQL = "SELECT * FROM $company_name WHERE email = '$email'";
             $result = mysqli_query($db, $validateEmailSQL);
             if (mysqli_num_rows($result) == 0) {
-                $_SESSION['warn'] = 'User doesnt exist';
+                $_SESSION['warn'] = $DEFAULT_LANGUAGE['USER_NOT_EXIST'];
             } else {
                 $result = mysqli_fetch_assoc($result);
                 $code = $result['resetID'];
 
                 $to = $email;
-                $subject = 'Password Restart';
-                $from = 'no-replay@pcal.com';
+                $subject = $DEFAULT_LANGUAGE['RESTART_PASS'];
+                $from = $DEFAULT_LANGUAGE['EMAIL_ADDRESS'];
 
                 // To send HTML mail, the Content-type header must be set
                 $headers  = 'MIME-Version: 1.0' . "\r\n";
                 $headers .= 'Content-type: text/html; charset=UTF-8' . "\r\n";
 
                 // Create email headers
-                $headers .= 'From: Planning Calendar <' . $from . ">\r\n" .
-                    'Reply-To: support@pcal.com' . "\r\n" .
+                $headers .= 'From: ' . $DEFAULT_LANGUAGE['EMAIL_NAME'] . ' <' . $from . ">\r\n" .
+                    'Reply-To: ' . $DEFAULT_LANGUAGE['EMAIL_REPLY'] . "\r\n" .
                     'X-Mailer: PHP/' . phpversion();
 
                 // Compose a simple HTML email message
                 $message = '<html><body>';
                 $message .= '<h1 style="color:#f40;">Hi! ' . $result['first_name'] . ' ' . $result['last_name'] . '</h1>';
-                $message .= '<p style="color:#080;font-size:18px;">Here is your restart link walid for 5 min.</p>';
+                $message .= '<p style="color:#080;font-size:18px;">Here is your restart link valid for 5 min.</p>';
                 $message .= '<a href="https://creepy-corp.eu/git/jsupa/calendar/demo/login-page/php/?reset=' . $code . '&cloud=' . $company_name . '">RESET</a>';
                 $message .= '</body></html>';
 
                 // Sending email
                 if (mail($to, $subject, $message, $headers) && $result['resetID']) {
-                    $_SESSION['alert'] = 'Your mail has been sent successfully.';
+                    $_SESSION['alert'] = $DEFAULT_LANGUAGE['EMAIL_SENT'];
                     unset($_SESSION['wrongPassShow']);
                     $resetTime5min = microtime(true) + 300;
                     $query = "UPDATE $company_name SET resetTime = '$resetTime5min' WHERE email = '$email'";
                     $results = mysqli_query($db, $query);
+                    header('location: https://creepy-corp.eu/git/jsupa/calendar/demo/login-page/php');
+                    die();
                 } else {
-                    $_SESSION['warn'] = 'Unable to send email.';
+                    $_SESSION['warn'] = $DEFAULT_LANGUAGE['EMAIL_ERROR'];
                 }
             }
         }
@@ -128,13 +141,20 @@ if (isset($_GET['reset'])) {
     $result = mysqli_query($db, $getUserSQL);
     $result = mysqli_fetch_assoc($result);
     if ($result['resetTime'] <= microtime(true)) {
-        $_SESSION['warn'] = 'Link is invalid';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['INVALID_LINK'];
         header('location: https://creepy-corp.eu/git/jsupa/calendar/demo/login-page/php');
         die();
     } else {
         $_SESSION['valid_reset_token'] = true;
-        $_SESSION['alert'] = $result['last_name'] . ' ' . $result['first_name'];
+        $_SESSION['alert'] = "{$result['first_name']} {$result['last_name']}";
     }
+}
+if (isset($_POST['log_out'])) {
+    session_destroy();
+    session_start();
+    $_SESSION['alert'] = "successful signed out";
+    header('location: https://creepy-corp.eu/git/jsupa/calendar/demo/login-page/php');
+    die();
 }
 if (isset($_POST['password_change'])) {
     $passResetID = mysqli_real_escape_string($db, $_GET['reset']);
@@ -142,26 +162,27 @@ if (isset($_POST['password_change'])) {
     $password1 = mysqli_real_escape_string($db, $_POST['password1']);
     $password2 = mysqli_real_escape_string($db, $_POST['password2']);
     if (empty($password1) || empty($password2)) {
-        $_SESSION['warn'] = 'Password required';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['PASS_REQUIRE'];
     } else if ($password1 != $password2) {
-        $_SESSION['warn'] = 'Password dostn match';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['MATCH_PASS'];
     } else if ($password1 === $password2) {
-        $_SESSION['alert'] = 'password sucessfull change ';
+        $_SESSION['alert'] = $DEFAULT_LANGUAGE['PASS_CHANGE'];
         $to = $result['email'];
+        $password = md5($password1);
         $newResetId = RandomString();
-        $query = "UPDATE $company_name SET resetID = '$newResetId' WHERE resetID = '$passResetID'";
+        $query = "UPDATE $company_name SET resetID = '$newResetId', password_md5 = '$password' WHERE resetID = '$passResetID'";
         $results = mysqli_query($db, $query);
 
-        $subject = 'Password Change';
-        $from = 'no-replay@pcal.com';
+        $subject = $DEFAULT_LANGUAGE['RESTARTED_PASS'];
+        $from = $DEFAULT_LANGUAGE['EMAIL_ADDRESS'];
 
         // To send HTML mail, the Content-type header must be set
         $headers  = 'MIME-Version: 1.0' . "\r\n";
         $headers .= 'Content-type: text/html; charset=UTF-8' . "\r\n";
 
         // Create email headers
-        $headers .= 'From: ' . $from . "\r\n" .
-            'Reply-To: support@pcal.com' . "\r\n" .
+        $headers .= 'From: ' . $DEFAULT_LANGUAGE['EMAIL_NAME'] . ' <' . $from . ">\r\n" .
+            'Reply-To: ' . $DEFAULT_LANGUAGE['EMAIL_REPLY'] . "\r\n" .
             'X-Mailer: PHP/' . phpversion();
 
         // Compose a simple HTML email message
@@ -174,7 +195,7 @@ if (isset($_POST['password_change'])) {
         header('location: https://creepy-corp.eu/git/jsupa/calendar/demo/login-page/php');
         die();
     } else {
-        $_SESSION['warn'] = 'please contact support';
+        $_SESSION['warn'] = $DEFAULT_LANGUAGE['ERROR'];
     }
 }
 ?>
@@ -185,8 +206,12 @@ if (isset($_POST['password_change'])) {
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400" />
-    <link rel="stylesheet" href="./style/style.css" />
+    <link rel="stylesheet" href="./style/style.css?v=<?php echo RandomString(); ?>" />
     <link rel="stylesheet" href="./style/all.css" />
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1990 12:00:00 GMT" />
     <title>Planning calendar</title>
 </head>
 
@@ -204,16 +229,20 @@ if (isset($_POST['password_change'])) {
                 </div>
             </div>
             <div class="welcome_text">
-                <?php if (!$_SESSION['valid_reset_token']) { ?>
+                <?php if (!$_SESSION['valid_reset_token'] && !$_SESSION['user']) { ?>
                     <h1>Welcome</h1>
                     <h4>Sing up to continue.</h4>
-                <?php } else { ?>
+                <?php } else if ($_SESSION['valid_reset_token']) { ?>
                     <h1>Password Reset</h1>
                     <h4>Enter your new password below.</h4>
+                <?php } else if ($_SESSION['user']) { ?>
+                    <h1>Welcome</h1>
+                    <h4><?php echo "{$_SESSION['first_name']} {$_SESSION['last_name']}"; ?></h4>
                 <?php } ?>
             </div>
             <div class="login_form">
                 <form method="POST">
+
                     <?php if (isset($_SESSION['warn'])) { ?>
                         <div class="input warn">
                             <i class="fa-regular fa-triangle-exclamation"></i>
@@ -225,7 +254,8 @@ if (isset($_POST['password_change'])) {
                             <p><?php echo $_SESSION['alert']; ?></p>
                         </div>
                     <?php } ?>
-                    <?php if (!$_SESSION['valid_reset_token']) { ?>
+
+                    <?php if (!$_SESSION['valid_reset_token'] && !$_SESSION['user']) { ?>
                         <div class="input">
                             <h6>cloud</h6>
                             <i class="fa-regular fa-briefcase"></i>
@@ -249,7 +279,7 @@ if (isset($_POST['password_change'])) {
                         <?php if (isset($_SESSION['wrongPassShow'])) { ?>
                             <button type="submit" name="password_reset" class="resetPass">FORGOT PASSWORD?</button>
                         <?php }
-                    } else { ?>
+                    } else if ($_SESSION['valid_reset_token']) { ?>
                         <div class="input">
                             <h6>new password</h6>
                             <i class="fa-regular fa-lock-keyhole"></i>
@@ -261,6 +291,10 @@ if (isset($_POST['password_change'])) {
                             <input type="password" placeholder="password" name="password2" />
                         </div>
                         <button type="submit" name="password_change">SUBMIT</button>
+                    <?php } else if ($_SESSION['user']) { ?>
+                        LOGEDIN :D
+
+                        <button type="submit" name="log_out" style="background: #c12940; color:#e0a5ae">SIGN OUT</button>
                     <?php } ?>
                 </form>
             </div>
