@@ -5,7 +5,7 @@
 Planning Calendar for organizations
 
 ## Demo Links:
-<a href="https://creepy-corp.eu/git/jsupa/calendar/demo/calendar-table/">calendar-table</a>
+<a href="https://creepy-corp.eu/git/jsupa/calendar/demo/calendar-table/">calendar-table</a><br>
 <a href="https://calendar.creepy-corp.eu/">demo-page</a> demo-admin-admin
 
 ....
